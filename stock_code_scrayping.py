@@ -109,83 +109,60 @@ def select_codes_by_price(
 
 
 class StockScraperApp:
-    def __init__(
-        self,
-        master: Any,
-        tk_module: Any,
-        ttk_module: Any,
-        messagebox_module: Any,
-    ) -> None:
+    def __init__(self, master: tk.Tk) -> None:
         self.master = master
-        self.tk = tk_module
-        self.ttk = ttk_module
-        self.messagebox = messagebox_module
-
         self.master.title("銘柄コードスクレイパー")
 
-        self.count_var = self.tk.StringVar(value="30")
-        self.min_price_var = self.tk.StringVar(value="100")
-        self.max_price_var = self.tk.StringVar(value="500")
+        self.count_var = tk.StringVar(value="30")
+        self.min_price_var = tk.StringVar(value="100")
+        self.max_price_var = tk.StringVar(value="500")
 
         self._build_widgets()
 
     def _build_widgets(self) -> None:
-        print("DEBUG: _build_widgets() 開始")
-        print("DEBUG: マスターウィンドウのgrid設定中...")
+        padding = {"padx": 10, "pady": 5}
+
+        frame = ttk.Frame(self.master)
+        frame.grid(row=0, column=0, sticky="nsew")
+
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(1, weight=1)
 
-        print("DEBUG: controlsフレーム作成中...")
-        controls = self.ttk.Frame(self.master, padding=(10, 10, 10, 0))
-        print("DEBUG: controlsフレームをgridに配置中...")
-        controls.grid(row=0, column=0, sticky="ew")
-        controls.columnconfigure(1, weight=1)
-
-        self.ttk.Label(controls, text="抽出銘柄数").grid(row=0, column=0, sticky="w", padx=(0, 10), pady=5)
-        self.ttk.Entry(controls, textvariable=self.count_var, width=10).grid(
-            row=0, column=1, sticky="ew", pady=5
+        ttk.Label(frame, text="抽出銘柄数").grid(row=0, column=0, sticky="w", **padding)
+        ttk.Entry(frame, textvariable=self.count_var, width=10).grid(
+            row=0, column=1, sticky="ew", **padding
         )
 
-        self.ttk.Label(controls, text="終値下限 (円)").grid(row=1, column=0, sticky="w", padx=(0, 10), pady=5)
-        self.ttk.Entry(controls, textvariable=self.min_price_var, width=10).grid(
-            row=1, column=1, sticky="ew", pady=5
+        ttk.Label(frame, text="終値下限 (円)").grid(row=1, column=0, sticky="w", **padding)
+        ttk.Entry(frame, textvariable=self.min_price_var, width=10).grid(
+            row=1, column=1, sticky="ew", **padding
         )
 
-        self.ttk.Label(controls, text="終値上限 (円)").grid(row=2, column=0, sticky="w", padx=(0, 10), pady=5)
-        self.ttk.Entry(controls, textvariable=self.max_price_var, width=10).grid(
-            row=2, column=1, sticky="ew", pady=5
+        ttk.Label(frame, text="終値上限 (円)").grid(row=2, column=0, sticky="w", **padding)
+        ttk.Entry(frame, textvariable=self.max_price_var, width=10).grid(
+            row=2, column=1, sticky="ew", **padding
         )
 
-        self.start_button = self.ttk.Button(
-            controls, text="スクレイピング開始", command=self.start_scraping
-        )
+        self.start_button = ttk.Button(frame, text="スクレイピング開始", command=self.start_scraping)
         self.start_button.grid(row=3, column=0, columnspan=2, pady=(10, 5))
 
-        self.status_var = self.tk.StringVar(value="準備完了")
-        self.ttk.Label(controls, textvariable=self.status_var).grid(
-            row=4, column=0, columnspan=2, sticky="w", pady=(0, 5)
-        )
-
-        table_frame = self.ttk.Frame(self.master, padding=(10, 5, 10, 10))
-        table_frame.grid(row=1, column=0, sticky="nsew")
-        table_frame.columnconfigure(0, weight=1)
-        table_frame.rowconfigure(0, weight=1)
+        self.status_var = tk.StringVar(value="準備完了")
+        ttk.Label(frame, textvariable=self.status_var).grid(row=4, column=0, columnspan=2, **padding)
 
         columns = ("code", "price")
-        self.tree = self.ttk.Treeview(
-            table_frame, columns=columns, show="headings", height=15
-        )
+        self.tree = ttk.Treeview(self.master, columns=columns, show="headings", height=15)
         self.tree.heading("code", text="銘柄コード")
         self.tree.heading("price", text="終値 (円)")
         self.tree.column("code", width=120, anchor="center")
         self.tree.column("price", width=120, anchor="e")
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
 
-        scrollbar = self.ttk.Scrollbar(
-            table_frame, orient="vertical", command=self.tree.yview
-        )
+        scrollbar = ttk.Scrollbar(self.master, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.grid(row=0, column=1, sticky="ns")
+        scrollbar.grid(row=1, column=1, sticky="ns", pady=(0, 10))
+
+        self.master.grid_columnconfigure(0, weight=1)
+        self.master.grid_rowconfigure(1, weight=1)
 
     def start_scraping(self) -> None:
         try:
@@ -193,22 +170,22 @@ class StockScraperApp:
             if count <= 0:
                 raise ValueError
         except ValueError:
-            self.messagebox.showerror("入力エラー", "抽出銘柄数は正の整数を入力してください。")
+            messagebox.showerror("入力エラー", "抽出銘柄数は正の整数を入力してください。")
             return
 
         try:
             min_price = float(self.min_price_var.get())
             max_price = float(self.max_price_var.get())
         except ValueError:
-            self.messagebox.showerror("入力エラー", "終値の範囲には数値を入力してください。")
+            messagebox.showerror("入力エラー", "終値の範囲には数値を入力してください。")
             return
 
         if min_price > max_price:
-            self.messagebox.showerror("入力エラー", "終値の下限は上限以下である必要があります。")
+            messagebox.showerror("入力エラー", "終値の下限は上限以下である必要があります。")
             return
 
         self.status_var.set("スクレイピング中...")
-        self.start_button.config(state=self.tk.DISABLED)
+        self.start_button.config(state=tk.DISABLED)
 
         threading.Thread(
             target=self._scrape_in_thread,
@@ -236,8 +213,8 @@ class StockScraperApp:
 
     def _handle_error(self, message: str) -> None:
         self.status_var.set("エラーが発生しました")
-        self.start_button.config(state=self.tk.NORMAL)
-        self.messagebox.showerror("エラー", message)
+        self.start_button.config(state=tk.NORMAL)
+        messagebox.showerror("エラー", message)
 
     def _update_results(
         self, results: List[Tuple[str, float]], requested_count: int, total_valid: int
@@ -245,7 +222,7 @@ class StockScraperApp:
         self.tree.delete(*self.tree.get_children())
 
         for code, price in results:
-            self.tree.insert("", self.tk.END, values=(code, f"{price:.2f}"))
+            self.tree.insert("", tk.END, values=(code, f"{price:.2f}"))
 
         if results:
             status_message = f"{len(results)} 件の銘柄を表示中 (有効銘柄: {total_valid} 件)"
@@ -253,103 +230,17 @@ class StockScraperApp:
             status_message = "条件に一致する銘柄が見つかりませんでした。"
 
         self.status_var.set(status_message)
-        self.start_button.config(state=self.tk.NORMAL)
+        self.start_button.config(state=tk.NORMAL)
 
         if len(results) < requested_count:
-            self.messagebox.showinfo(
+            messagebox.showinfo(
                 "結果", f"条件に一致した銘柄は {len(results)} 件でした。"
             )
 
 
-def load_tkinter() -> Tuple[Any, Any, Any]:
-    try:
-        import tkinter as tk  # type: ignore
-        from tkinter import messagebox, ttk  # type: ignore
-    except ImportError as exc:
-        raise RuntimeError("tkinter が利用できません。") from exc
-    return tk, ttk, messagebox
-
-
-def run_cli(count: int, min_price: float, max_price: float) -> None:
-    url = "https://nikkeiyosoku.com/stock/all/"
-
-    try:
-        codes = scrape_stock_codes(url)
-        valid_codes = filter_valid_codes(codes)
-    except Exception as exc:
-        print(f"スクレイピングに失敗しました: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    if not valid_codes:
-        print("有効な銘柄コードが見つかりませんでした。", file=sys.stderr)
-        sys.exit(1)
-
-    results = select_codes_by_price(valid_codes, count, min_price, max_price)
-
-    if not results:
-        print("条件に一致する銘柄が見つかりませんでした。")
-        return
-
-    print("抽出結果:")
-    for code, price in results:
-        print(f"  {code}: {price:.2f} 円")
-
-
-def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="銘柄コードスクレイパー")
-    parser.add_argument("--count", type=int, default=30, help="抽出する銘柄数")
-    parser.add_argument("--min-price", type=float, default=100, help="終値の下限")
-    parser.add_argument("--max-price", type=float, default=500, help="終値の上限")
-    parser.add_argument(
-        "--cli",
-        action="store_true",
-        help="GUIの代わりにターミナル版を実行します",
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
-    args = parse_arguments()
-
-    if args.count <= 0:
-        raise SystemExit("--count には正の整数を指定してください。")
-    if args.min_price > args.max_price:
-        raise SystemExit("--min-price は --max-price 以下である必要があります。")
-
-    if args.cli:
-        run_cli(args.count, args.min_price, args.max_price)
-        return
-
-    print("DEBUG: tkinterモジュールの読み込み中...")
-    try:
-        tk, ttk, messagebox = load_tkinter()
-        print("DEBUG: tkinterモジュール読み込み成功")
-    except RuntimeError as exc:
-        print(
-            f"tkinter が利用できないため、ターミナル版を起動します。（{exc}）",
-            file=sys.stderr,
-        )
-        run_cli(args.count, args.min_price, args.max_price)
-        return
-
-    print("DEBUG: Tkルートウィンドウ作成中...")
-    try:
-        root = tk.Tk()
-        print("DEBUG: ジオメトリ設定中...")
-        root.geometry("500x600")
-        print("DEBUG: ルートウィンドウ作成完了")
-    except tk.TclError:
-        print("GUIの初期化に失敗したため、ターミナル版を起動します。", file=sys.stderr)
-        run_cli(args.count, args.min_price, args.max_price)
-        return
-
-    print("DEBUG: StockScraperAppインスタンス作成中...")
-    app = StockScraperApp(root, tk, ttk, messagebox)
-    print("DEBUG: 初期値設定中...")
-    app.count_var.set(str(args.count))
-    app.min_price_var.set(str(args.min_price))
-    app.max_price_var.set(str(args.max_price))
-    print("DEBUG: mainloop開始...")
+    root = tk.Tk()
+    StockScraperApp(root)
     root.mainloop()
 
 
