@@ -2,6 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import random
+import threading
+from typing import List, Optional, Tuple
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+import yfinance as yf
 import argparse
 import sys
 import threading
