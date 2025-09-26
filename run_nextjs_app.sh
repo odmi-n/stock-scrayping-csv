@@ -48,3 +48,4 @@ NEXTJS_PID=$!
 
 # 両方のプロセスを待機
 wait $FLASK_PID $NEXTJS_PID
+
