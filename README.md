@@ -8,7 +8,7 @@ YFinanceを使用して東証上場銘柄の株価データを取得し、CSVフ
 - 指定期間での高値・安値・出来高・始値・終値の取得
 - 20日移動平均線の自動計算
 - CSVファイルへの出力
-- **GUI版とCUI版の2つのインターフェース**
+- **GUI版、CUI版、Webアプリ版、Next.js Liquid Glass版の4つのインターフェース**
 
 ## 必要なパッケージ
 
@@ -17,6 +17,66 @@ pip install -r requirements.txt
 ```
 
 ## 使用方法
+
+### 📊 銘柄コードスクレイパー（`stock_code_scrayping.py`）
+
+東証銘柄一覧をスクレイピングし、yfinanceの終値で絞り込みます。GUI、ターミナル、Webアプリ、Next.js Liquid Glassの4つのインターフェースが利用可能です。
+
+#### 🌐 Webアプリ版を起動する（推奨）
+
+```bash
+./run_web_app.sh
+```
+
+または手動で：
+```bash
+source test_env/bin/activate
+python stock_web_app.py
+```
+
+ブラウザで `http://localhost:5000` にアクセスしてください。
+
+#### ✨ Next.js Liquid Glass版を起動する（最新・推奨）
+
+```bash
+./run_nextjs_app.sh
+```
+
+または手動で：
+```bash
+# バックエンド起動（ターミナル1）
+source test_env/bin/activate
+python stock_web_app.py
+
+# フロントエンド起動（ターミナル2）
+cd stock-scraper-nextjs
+npm install
+npm run dev
+```
+
+フロントエンド: `http://localhost:3000` / バックエンド: `http://localhost:5000`
+
+**特徴:**
+- 🎨 Apple風Liquid Glassデザイン
+- 📱 完全レスポンシブ対応
+- ⚡ リアルタイム進行状況表示
+- 🌊 美しいアニメーション効果
+
+#### 🖥️ GUIを起動する
+
+```bash
+python stock_code_scrayping.py
+```
+
+GUIを利用する場合はディスプレイ環境が必要です。`--count` / `--min-price` / `--max-price` を同時に指定すると、起動時のフォームにも反映されます。
+
+#### 💻 ターミナル版を起動する
+
+```bash
+python stock_code_scrayping.py --cli --count 30 --min-price 100 --max-price 500
+```
+
+GUIが利用できない環境（例：SSH接続のサーバー）では自動的にターミナル版に切り替わります。ターミナル版では抽出結果が標準出力に一覧表示されます。
 
 ### 🖥️ GUI版（推奨）
 
