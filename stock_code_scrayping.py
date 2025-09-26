@@ -9,12 +9,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 import yfinance as yf
-import argparse
-import sys
-import threading
-from typing import Any, List, Optional, Tuple
-
-import yfinance as yf
 
 def scrape_stock_codes(url):
     """
