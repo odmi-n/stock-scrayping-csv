@@ -130,10 +130,14 @@ class StockScraperApp:
         self._build_widgets()
 
     def _build_widgets(self) -> None:
+        print("DEBUG: _build_widgets() 開始")
+        print("DEBUG: マスターウィンドウのgrid設定中...")
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(1, weight=1)
 
+        print("DEBUG: controlsフレーム作成中...")
         controls = self.ttk.Frame(self.master, padding=(10, 10, 10, 0))
+        print("DEBUG: controlsフレームをgridに配置中...")
         controls.grid(row=0, column=0, sticky="ew")
         controls.columnconfigure(1, weight=1)
 
@@ -316,8 +320,10 @@ def main() -> None:
         run_cli(args.count, args.min_price, args.max_price)
         return
 
+    print("DEBUG: tkinterモジュールの読み込み中...")
     try:
         tk, ttk, messagebox = load_tkinter()
+        print("DEBUG: tkinterモジュール読み込み成功")
     except RuntimeError as exc:
         print(
             f"tkinter が利用できないため、ターミナル版を起動します。（{exc}）",
@@ -326,17 +332,24 @@ def main() -> None:
         run_cli(args.count, args.min_price, args.max_price)
         return
 
+    print("DEBUG: Tkルートウィンドウ作成中...")
     try:
         root = tk.Tk()
+        print("DEBUG: ジオメトリ設定中...")
+        root.geometry("500x600")
+        print("DEBUG: ルートウィンドウ作成完了")
     except tk.TclError:
         print("GUIの初期化に失敗したため、ターミナル版を起動します。", file=sys.stderr)
         run_cli(args.count, args.min_price, args.max_price)
         return
 
+    print("DEBUG: StockScraperAppインスタンス作成中...")
     app = StockScraperApp(root, tk, ttk, messagebox)
+    print("DEBUG: 初期値設定中...")
     app.count_var.set(str(args.count))
     app.min_price_var.set(str(args.min_price))
     app.max_price_var.set(str(args.max_price))
+    print("DEBUG: mainloop開始...")
     root.mainloop()
 
 
