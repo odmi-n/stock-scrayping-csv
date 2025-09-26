@@ -257,6 +257,16 @@
                 font-size: 2em;
             }
         }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sort-indicator {
+            margin-left: 6px;
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -312,8 +322,8 @@
             <table class="results-table" id="resultsTable" style="display: none;">
                 <thead>
                     <tr>
-                        <th>銘柄コード</th>
-                        <th>終値 (円)</th>
+                        <th id="thCode" class="sortable">銘柄コード<span class="sort-indicator" id="codeIndicator"></span></th>
+                        <th id="thPrice" class="sortable">終値 (円)<span class="sort-indicator" id="priceIndicator"></span></th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody">
@@ -332,8 +342,14 @@
         const resultsBody = document.getElementById('resultsBody');
         const resultsCount = document.getElementById('resultsCount');
         const emptyState = document.getElementById('emptyState');
+        const thCode = document.getElementById('thCode');
+        const thPrice = document.getElementById('thPrice');
+        const codeIndicator = document.getElementById('codeIndicator');
+        const priceIndicator = document.getElementById('priceIndicator');
 
         let statusCheckInterval;
+        let currentResults = [];
+        let sortState = { key: 'code', direction: 'asc' }; // key: 'code' | 'price'; direction: 'asc' | 'desc'
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -424,17 +440,8 @@
             resultsTable.style.display = 'table';
             resultsCount.style.display = 'inline';
             resultsCount.textContent = results.length + ' 件';
-            
-            resultsBody.innerHTML = '';
-            
-            results.forEach(result => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="stock-code">${result.code}</td>
-                    <td class="stock-price">${result.price.toFixed(2)}</td>
-                `;
-                resultsBody.appendChild(row);
-            });
+            currentResults = Array.isArray(results) ? results.slice() : [];
+            renderResults();
         }
 
         function resetButton() {
@@ -453,11 +460,79 @@
                     scrapeButton.innerHTML = '<span class="loading"></span>実行中...';
                     statusDiv.style.display = 'block';
                     startStatusCheck();
+                } else if (status.results && status.results.length > 0) {
+                    // 既に結果がある場合、初期表示
+                    showResults(status.results);
                 }
             } catch (error) {
                 console.error('Initial status check failed:', error);
             }
         });
+
+        // ソート関連
+        function setSort(key) {
+            if (sortState.key === key) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.key = key;
+                sortState.direction = 'asc';
+            }
+            updateIndicators();
+            renderResults();
+        }
+
+        function updateIndicators() {
+            codeIndicator.textContent = '';
+            priceIndicator.textContent = '';
+            const arrow = sortState.direction === 'asc' ? '▲' : '▼';
+            if (sortState.key === 'code') {
+                codeIndicator.textContent = arrow;
+            } else if (sortState.key === 'price') {
+                priceIndicator.textContent = arrow;
+            }
+        }
+
+        function renderResults() {
+            if (!currentResults || currentResults.length === 0) {
+                resultsBody.innerHTML = '';
+                return;
+            }
+            const sorted = currentResults.slice().sort((a, b) => {
+                if (sortState.key === 'price') {
+                    const diff = (a.price ?? 0) - (b.price ?? 0);
+                    return sortState.direction === 'asc' ? diff : -diff;
+                }
+                // code: compare as numeric if possible, fallback to string
+                const aCodeNum = Number(a.code);
+                const bCodeNum = Number(b.code);
+                let cmp;
+                if (!Number.isNaN(aCodeNum) && !Number.isNaN(bCodeNum)) {
+                    cmp = aCodeNum - bCodeNum;
+                } else {
+                    const aStr = String(a.code);
+                    const bStr = String(b.code);
+                    cmp = aStr.localeCompare(bStr);
+                }
+                return sortState.direction === 'asc' ? cmp : -cmp;
+            });
+
+            resultsBody.innerHTML = '';
+            sorted.forEach(result => {
+                const row = document.createElement('tr');
+                const price = typeof result.price === 'number' ? result.price.toFixed(2) : '';
+                row.innerHTML = `
+                    <td class="stock-code">${result.code}</td>
+                    <td class="stock-price">${price}</td>
+                `;
+                resultsBody.appendChild(row);
+            });
+        }
+
+        // ヘッダークリックでソート
+        thCode.addEventListener('click', () => setSort('code'));
+        thPrice.addEventListener('click', () => setSort('price'));
+        // 初期のインジケータを反映
+        updateIndicators();
     </script>
 </body>
 </html>

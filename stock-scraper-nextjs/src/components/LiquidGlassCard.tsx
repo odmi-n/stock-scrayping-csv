@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 interface LiquidGlassCardProps {
   children: React.ReactNode;
@@ -9,6 +9,7 @@ interface LiquidGlassCardProps {
   variant?: 'default' | 'dark' | 'light';
   hover?: boolean;
   float?: boolean;
+  style?: React.CSSProperties;
 }
 
 export default function LiquidGlassCard({ 
@@ -16,7 +17,8 @@ export default function LiquidGlassCard({
   className, 
   variant = 'default',
   hover = false,
-  float = false 
+  float = false,
+  style
 }: LiquidGlassCardProps) {
   const baseClasses = "glass-card p-6 transition-all duration-300";
   const hoverClasses = hover ? "hover:scale-105 hover:shadow-2xl" : "";
@@ -29,13 +31,16 @@ export default function LiquidGlassCard({
   };
 
   return (
-    <div className={cn(
-      baseClasses,
-      variantClasses[variant],
-      hoverClasses,
-      floatClasses,
-      className
-    )}>
+    <div 
+      className={cn(
+        baseClasses,
+        variantClasses[variant],
+        hoverClasses,
+        floatClasses,
+        className
+      )}
+      style={style}
+    >
       {children}
     </div>
   );

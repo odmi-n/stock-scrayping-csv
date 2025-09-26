@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import LiquidGlassCard from '@/components/LiquidGlassCard';
 import LiquidButton from '@/components/LiquidButton';
 import LiquidInput from '@/components/LiquidInput';
@@ -29,6 +29,39 @@ export default function Home() {
     results: []
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<'code' | 'price'>('code');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const sortedResults = useMemo(() => {
+    const results = status.results || [];
+    const copy = results.slice();
+    copy.sort((a, b) => {
+      if (sortKey === 'price') {
+        const diff = (a.price ?? 0) - (b.price ?? 0);
+        return sortDir === 'asc' ? diff : -diff;
+      }
+      // code: prefer numeric comparison, fallback to string
+      const aNum = Number(a.code);
+      const bNum = Number(b.code);
+      let cmp: number;
+      if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+        cmp = aNum - bNum;
+      } else {
+        cmp = String(a.code).localeCompare(String(b.code));
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return copy;
+  }, [status.results, sortKey, sortDir]);
+
+  const toggleSort = (key: 'code' | 'price') => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   // ステータスチェック
   const checkStatus = async () => {
@@ -232,15 +265,38 @@ export default function Home() {
         {/* 右側: 結果表示 */}
         <div className="space-y-6">
           <LiquidGlassCard hover className="h-full animate-float" style={{animationDelay: '1.5s'}}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-100 flex items-center">
+            <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+              <h3 className="text-2xl font-bold text-slate-100 flex items-center">
                 📊 抽出結果
-              </h2>
-              {status.results.length > 0 && (
-                <span className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  {status.results.length} 件
-                </span>
-              )}
+              </h3>
+              <div className="flex items-center gap-3">
+                {status.results.length > 0 && (
+                  <span className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {status.results.length} 件
+                  </span>
+                )}
+                {/* Sort controls */}
+                <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1 border border-white/20">
+                  <button
+                    onClick={() => toggleSort('code')}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      sortKey === 'code' ? 'bg-white/20 text-white' : 'text-slate-200 hover:bg-white/10'
+                    }`}
+                    aria-label="Sort by code"
+                  >
+                    銘柄{sortKey === 'code' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </button>
+                  <button
+                    onClick={() => toggleSort('price')}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      sortKey === 'price' ? 'bg-white/20 text-white' : 'text-slate-200 hover:bg-white/10'
+                    }`}
+                    aria-label="Sort by price"
+                  >
+                    価格{sortKey === 'price' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </button>
+                </div>
+              </div>
             </div>
             
             {status.results.length === 0 ? (
@@ -252,7 +308,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="max-h-96 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                {status.results.map((result, index) => (
+                {sortedResults.map((result, index) => (
                   <div 
                     key={result.code}
                     className="flex justify-between items-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-all duration-200 animate-float"
