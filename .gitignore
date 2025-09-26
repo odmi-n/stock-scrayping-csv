@@ -1,0 +1,15 @@
+# CSV files
+*.csv
+
+# Excel files
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+*.xltx
+*.xltm
+
+# Virtual environment
+.venv/
+venv/
+env/
