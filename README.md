@@ -18,6 +18,26 @@ pip install -r requirements.txt
 
 ## 使用方法
 
+### 📊 銘柄コードスクレイパー（`stock_code_scrayping.py`）
+
+東証銘柄一覧をスクレイピングし、yfinanceの終値で絞り込みます。GUIとターミナルのどちらでも実行可能です。
+
+#### GUIを起動する
+
+```bash
+python stock_code_scrayping.py
+```
+
+GUIを利用する場合はディスプレイ環境が必要です。`--count` / `--min-price` / `--max-price` を同時に指定すると、起動時のフォームにも反映されます。
+
+#### ターミナル版を起動する
+
+```bash
+python stock_code_scrayping.py --cli --count 30 --min-price 100 --max-price 500
+```
+
+GUIが利用できない環境（例：SSH接続のサーバー）では自動的にターミナル版に切り替わります。ターミナル版では抽出結果が標準出力に一覧表示されます。
+
 ### 🖥️ GUI版（推奨）
 
 **方法1: 起動スクリプトを使用**
