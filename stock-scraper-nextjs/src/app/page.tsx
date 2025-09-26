@@ -20,8 +20,8 @@ interface ScrapingStatus {
 
 export default function Home() {
   const [count, setCount] = useState<number>(30);
-  const [minPrice, setMinPrice] = useState<number>(100);
-  const [maxPrice, setMaxPrice] = useState<number>(500);
+  const [minPrice, setMinPrice] = useState<number | null>(100);
+  const [maxPrice, setMaxPrice] = useState<number | null>(500);
   const [status, setStatus] = useState<ScrapingStatus>({
     is_running: false,
     progress: 0,
@@ -47,6 +47,17 @@ export default function Home() {
 
   // スクレイピング開始
   const startScraping = async () => {
+    // null値のチェック
+    if (minPrice === null || maxPrice === null) {
+      alert('価格の範囲を入力してください。');
+      return;
+    }
+    
+    if (minPrice <= 0 || maxPrice <= 0) {
+      alert('価格は1円以上を入力してください。');
+      return;
+    }
+    
     if (minPrice > maxPrice) {
       alert('終値の下限は上限以下である必要があります。');
       return;
@@ -102,10 +113,10 @@ export default function Home() {
     <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col">
       {/* ヘッダー */}
       <div className="text-center mb-12 animate-float">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+        <h1 className="text-5xl md:text-6xl font-bold text-slate-100 mb-4 tracking-tight">
           📈 銘柄コードスクレイパー
         </h1>
-        <p className="text-xl text-white/80 max-w-2xl mx-auto">
+        <p className="text-xl text-slate-300 max-w-2xl mx-auto">
           日本株の銘柄コードと価格情報を美しいLiquid Glassデザインで取得
         </p>
       </div>
@@ -114,7 +125,7 @@ export default function Home() {
         {/* 左側: 入力フォーム */}
         <div className="space-y-6">
           <LiquidGlassCard hover className="animate-float" style={{animationDelay: '0.5s'}}>
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center">
               ⚙️ 設定
             </h2>
             
@@ -134,23 +145,43 @@ export default function Home() {
                 <LiquidInput
                   label="終値下限 (円)"
                   type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(Number(e.target.value))}
+                  value={minPrice || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setMinPrice(null);
+                    } else {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue)) {
+                        setMinPrice(numValue);
+                      }
+                    }
+                  }}
                   min={1}
-                  step={0.01}
                   required
                   placeholder="100"
+                  integerOnly
                 />
                 
                 <LiquidInput
                   label="終値上限 (円)"
                   type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  value={maxPrice || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setMaxPrice(null);
+                    } else {
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue)) {
+                        setMaxPrice(numValue);
+                      }
+                    }
+                  }}
                   min={1}
-                  step={0.01}
                   required
                   placeholder="500"
+                  integerOnly
                 />
               </div>
             </div>
@@ -173,10 +204,10 @@ export default function Home() {
             <LiquidGlassCard className={`animate-float ${status.error ? 'border-red-400/50' : 'border-blue-400/50'}`} style={{animationDelay: '1s'}}>
               <div className="flex items-center mb-4">
                 <div className={`w-3 h-3 rounded-full mr-3 ${status.is_running ? 'bg-green-400 animate-pulse' : status.error ? 'bg-red-400' : 'bg-blue-400'}`}></div>
-                <h3 className="text-lg font-semibold text-white">ステータス</h3>
+                <h3 className="text-lg font-semibold text-slate-100">ステータス</h3>
               </div>
               
-              <p className={`text-sm mb-4 ${status.error ? 'text-red-300' : 'text-white/90'}`}>
+              <p className={`text-sm mb-4 ${status.error ? 'text-red-300' : 'text-slate-300'}`}>
                 {status.error || status.status_message}
               </p>
               
@@ -202,7 +233,7 @@ export default function Home() {
         <div className="space-y-6">
           <LiquidGlassCard hover className="h-full animate-float" style={{animationDelay: '1.5s'}}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white flex items-center">
+              <h2 className="text-2xl font-bold text-slate-100 flex items-center">
                 📊 抽出結果
               </h2>
               {status.results.length > 0 && (
@@ -215,7 +246,7 @@ export default function Home() {
             {status.results.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4 opacity-30">📈</div>
-                <p className="text-white/60 text-lg">
+                <p className="text-slate-400 text-lg">
                   スクレイピングを開始すると、ここに結果が表示されます
                 </p>
               </div>
@@ -230,8 +261,8 @@ export default function Home() {
                     <span className="font-mono text-lg font-bold text-blue-300">
                       {result.code}
                     </span>
-                    <span className="text-white font-semibold">
-                      ¥{result.price.toFixed(2)}
+                    <span className="text-slate-100 font-semibold">
+                      ¥{Math.round(result.price).toLocaleString()}
                     </span>
                   </div>
                 ))}
@@ -242,7 +273,7 @@ export default function Home() {
       </div>
 
       {/* フッター */}
-      <div className="text-center mt-12 text-white/50">
+      <div className="text-center mt-12 text-slate-500">
         <p className="text-sm">
           Powered by Next.js & Liquid Glass Design
         </p>

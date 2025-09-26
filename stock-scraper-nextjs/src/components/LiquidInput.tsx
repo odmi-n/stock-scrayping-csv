@@ -15,6 +15,7 @@ interface LiquidInputProps {
   step?: number;
   className?: string;
   disabled?: boolean;
+  integerOnly?: boolean; // 整数のみ入力を許可するオプション
 }
 
 export default function LiquidInput({
@@ -28,12 +29,30 @@ export default function LiquidInput({
   max,
   step,
   className,
-  disabled = false
+  disabled = false,
+  integerOnly = false
 }: LiquidInputProps) {
+  
+  // 整数のみ入力を制限するキーボードイベントハンドラー
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (integerOnly && type === 'number') {
+      // 数字、編集・ナビゲーション・システムキーのみ許可
+      const allowedKeys = [
+        'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 
+        'Tab', 'Enter', 'Home', 'End', 'Escape'
+      ];
+      const isNumber = /^[0-9]$/.test(e.key);
+      const isControlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C, Ctrl+V など
+      
+      if (!isNumber && !allowedKeys.includes(e.key) && !isControlKey) {
+        e.preventDefault();
+      }
+    }
+  };
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-medium text-slate-200">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
@@ -43,6 +62,7 @@ export default function LiquidInput({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onKeyDown={handleKeyDown}
         required={required}
         min={min}
         max={max}
