@@ -5,6 +5,8 @@ import LiquidGlassCard from '@/components/LiquidGlassCard';
 import LiquidButton from '@/components/LiquidButton';
 import LiquidInput from '@/components/LiquidInput';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://odmin.pythonanywhere.com';
+
 interface StockResult {
   code: string;
   price: number;
@@ -67,7 +69,7 @@ export default function Home() {
   const checkStatus = async () => {
     try {
       console.log('Fetching status from API...');
-      const response = await fetch('/api/status', {
+      const response = await fetch(`${API_BASE_URL}/api/status`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -130,7 +132,7 @@ export default function Home() {
     
     try {
       console.log('Starting scraping with params:', { count, minPrice, maxPrice });
-      const response = await fetch('/api/scrape', {
+      const response = await fetch(`${API_BASE_URL}/api/scrape`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
