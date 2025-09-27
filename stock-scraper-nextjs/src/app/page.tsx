@@ -66,10 +66,29 @@ export default function Home() {
   // ステータスチェック
   const checkStatus = async () => {
     try {
-      const response = await fetch('/api/status');
+      console.log('Fetching status from API...');
+      const response = await fetch('/api/status', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      console.log('Status response:', response.status, response.statusText);
+      
       if (response.ok) {
         try {
-          const statusData = await response.json();
+          const text = await response.text();
+          console.log('Response text:', text);
+          
+          if (!text) {
+            console.error('Empty response from API');
+            return null;
+          }
+          
+          const statusData = JSON.parse(text);
+          console.log('Parsed status data:', statusData);
           setStatus(statusData);
           return statusData;
         } catch (parseError) {
@@ -79,9 +98,12 @@ export default function Home() {
         }
       } else {
         console.error('Status check failed with status:', response.status);
+        const text = await response.text();
+        console.error('Error response text:', text);
       }
     } catch (error) {
       console.error('Status check failed:', error);
+      throw error;
     }
     return null;
   };
@@ -107,10 +129,12 @@ export default function Home() {
     setIsLoading(true);
     
     try {
+      console.log('Starting scraping with params:', { count, minPrice, maxPrice });
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           count,
@@ -118,6 +142,8 @@ export default function Home() {
           max_price: maxPrice
         })
       });
+      
+      console.log('Scrape response:', response.status, response.statusText);
 
       if (!response.ok) {
         let errorMessage = 'スクレイピングの開始に失敗しました';
@@ -158,7 +184,20 @@ export default function Home() {
 
   // 初期ステータスチェック
   useEffect(() => {
-    checkStatus();
+    const initializeApp = async () => {
+      try {
+        await checkStatus();
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+        setStatus(prev => ({
+          ...prev,
+          error: 'APIサーバーに接続できません。ページを再読み込みしてください。',
+          status_message: 'エラーが発生しました'
+        }));
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   return (

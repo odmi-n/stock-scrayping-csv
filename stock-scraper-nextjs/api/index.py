@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import os
 import json
 import tempfile
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 def get_status():
     """ファイルシステムから状態を取得"""
@@ -39,7 +41,11 @@ def status():
 @app.route('/api/scrape', methods=['POST', 'OPTIONS'])
 def scrape():
     """スクレイピング開始エンドポイント"""
-    from .scrape import scrape_in_background
+    # 相対インポートではなく、絶対インポート
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from scrape import scrape_in_background
     
     if request.method == 'OPTIONS':
         return '', 200, {
@@ -83,3 +89,26 @@ def scrape():
 @app.route('/<path:path>')
 def catch_all(path):
     return jsonify({"message": "Welcome to Stock Scraper API", "status": "online"})
+
+# Vercelのサーバレス関数用ハンドラー
+def handler(request):
+    """Vercel Serverless Function handler"""
+    with app.test_request_context(
+        path=request.get('path', '/'),
+        method=request.get('method', 'GET'),
+        headers=request.get('headers', {}),
+        data=request.get('body', b'')
+    ):
+        try:
+            response = app.full_dispatch_request()
+            return {
+                'statusCode': response.status_code,
+                'headers': dict(response.headers),
+                'body': response.get_data().decode('utf-8')
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"error": str(e)})
+            }
