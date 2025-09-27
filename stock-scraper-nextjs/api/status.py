@@ -1,11 +1,20 @@
+from http.server import BaseHTTPRequestHandler
 import json
+import os
+import tempfile
 
-# スクレイピング状態を共有するため、scrape.pyからインポート
-try:
-    from .scrape import scraping_status
-except ImportError:
-    # フォールバック用のデフォルト状態
-    scraping_status = {
+def get_status():
+    """ファイルシステムから状態を取得"""
+    try:
+        status_file = os.path.join(tempfile.gettempdir(), 'scraping_status.json')
+        if os.path.exists(status_file):
+            with open(status_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    
+    # デフォルト状態
+    return {
         "is_running": False,
         "progress": 0,
         "status_message": "準備完了",
@@ -13,17 +22,17 @@ except ImportError:
         "error": None
     }
 
-def handler(request):
-    """Vercelのサーバレス関数でスクレイピング状態を取得"""
-    if request.method == 'GET':
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps(scraping_status)
-        }
-    else:
-        return {
-            'statusCode': 405,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({"error": "Method not allowed"})
-        }
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        status = get_status()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(status).encode())
+    
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
