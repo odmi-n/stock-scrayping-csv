@@ -215,46 +215,44 @@ def scrape_in_background(count: int, min_price: float, max_price: float):
         })
         save_status(status)
 
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
+def handler(request):
+    """Vercel Serverless Function handler"""
+    if request.method == 'POST':
         current_status = get_status()
         
         if current_status["is_running"]:
-            self.send_response(400)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "スクレイピングは既に実行中です"}).encode())
-            return
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"error": "スクレイピングは既に実行中です"})
+            }
         
         try:
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
-            
-            count = int(data.get('count', 30))
-            min_price = float(data.get('min_price', 100))
-            max_price = float(data.get('max_price', 500))
+            body = json.loads(request.body.decode('utf-8')) if hasattr(request, 'body') else request.json
+            count = int(body.get('count', 30))
+            min_price = float(body.get('min_price', 100))
+            max_price = float(body.get('max_price', 500))
             
             if count <= 0:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "抽出銘柄数は正の整数を入力してください"}).encode())
-                return
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "抽出銘柄数は正の整数を入力してください"})
+                }
             
             if min_price > max_price:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "終値の下限は上限以下である必要があります"}).encode())
-                return
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "終値の下限は上限以下である必要があります"})
+                }
                 
         except (ValueError, TypeError):
-            self.send_response(400)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": "入力値が無効です"}).encode())
-            return
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"error": "入力値が無効です"})
+            }
         
         # バックグラウンドでスクレイピングを実行
         thread = threading.Thread(
@@ -264,14 +262,31 @@ class handler(BaseHTTPRequestHandler):
         )
         thread.start()
         
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps({"message": "スクレイピングを開始しました"}).encode())
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': json.dumps({"message": "スクレイピングを開始しました"})
+        }
     
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+    elif request.method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': ''
+        }
+    
+    else:
+        return {
+            'statusCode': 405,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({"error": "Method not allowed"})
+        }
