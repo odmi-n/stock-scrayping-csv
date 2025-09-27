@@ -1,15 +1,46 @@
+import os
+import re
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import threading
 import time
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any
 
 # 既存のスクレイピング機能をインポート
 from stock_code_scrayping import scrape_stock_codes, filter_valid_codes, select_codes_by_price
 
 app = Flask(__name__)
-# VercelのデプロイでもCORSが動作するように設定
-CORS(app, origins=['http://localhost:3000', 'https://*.vercel.app'], supports_credentials=True)
+
+_default_cors_origins = [
+    "http://localhost:3000",
+    re.compile(r"https://.*\.vercel\.app")
+]
+
+_extra_origins_env = os.getenv("ALLOWED_CORS_ORIGINS", "").strip()
+
+if _extra_origins_env:
+    for origin in _extra_origins_env.split(","):
+        cleaned = origin.strip()
+        if not cleaned:
+            continue
+        if cleaned.startswith("regex:"):
+            pattern = cleaned[len("regex:"):].strip()
+            if pattern:
+                try:
+                    _default_cors_origins.append(re.compile(pattern))
+                except re.error:
+                    print(f"[CORS] Invalid regex pattern ignored: {pattern}")
+        else:
+            _default_cors_origins.append(cleaned)
+
+cors_resources = {
+    r"/api/*": {
+        "origins": _default_cors_origins,
+        "supports_credentials": True
+    }
+}
+
+CORS(app, resources=cors_resources)
 
 # グローバル変数でスクレイピングの状態を管理
 scraping_status: Dict[str, Any] = {
