@@ -40,6 +40,11 @@ wheels/
 .next/
 out/
 node_modules/
+.env
+.env.local
+.env.development
+.env.production
+.env.test
 .DS_Store
 *.pem
 .env*.local
@@ -66,3 +71,4 @@ stock-scraper-nextjs/node_modules/
 stock-scraper-nextjs/.next/
 stock-scraper-nextjs/.turbo/
 stock-scraper-nextjs/.vercel
+stock-scraper-nextjs/.env
