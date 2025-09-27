@@ -68,9 +68,17 @@ export default function Home() {
     try {
       const response = await fetch('/api/status');
       if (response.ok) {
-        const statusData = await response.json();
-        setStatus(statusData);
-        return statusData;
+        try {
+          const statusData = await response.json();
+          setStatus(statusData);
+          return statusData;
+        } catch (parseError) {
+          console.error('JSON parse error in status check:', parseError);
+          const text = await response.text();
+          console.error('Response text:', text);
+        }
+      } else {
+        console.error('Status check failed with status:', response.status);
       }
     } catch (error) {
       console.error('Status check failed:', error);
@@ -111,11 +119,22 @@ export default function Home() {
         })
       });
 
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.error || 'スクレイピングの開始に失敗しました');
+        let errorMessage = 'スクレイピングの開始に失敗しました';
+        try {
+          const result = await response.json();
+          errorMessage = result.error || errorMessage;
+        } catch (parseError) {
+          // JSONパースエラーの場合は、レスポンステキストを取得
+          const text = await response.text();
+          console.error('JSON parse error:', parseError);
+          console.error('Response text:', text);
+          errorMessage = `サーバーエラー: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
 
       // ステータスポーリング開始
       const interval = setInterval(async () => {

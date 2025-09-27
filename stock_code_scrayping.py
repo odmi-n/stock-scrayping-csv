@@ -66,10 +66,15 @@ def filter_valid_codes(codes):
 
 def fetch_latest_close(code: str) -> Optional[float]:
     """yfinanceを利用して指定銘柄の直近終値を取得する。"""
-    if not code or not code.isdigit():
+    if not code:
         return None
-
-    ticker = f"{code}.T"
+    
+    # 銘柄コードから数字部分を抽出して.Tを付加
+    numeric_part = re.match(r'(\d+)', code)
+    if not numeric_part:
+        return None
+    
+    ticker = f"{numeric_part.group(1)}.T"
     try:
         history = yf.Ticker(ticker).history(period="5d", auto_adjust=False, prepost=False)
         if history.empty:
@@ -103,7 +108,15 @@ def select_codes_by_price(
             continue
 
         if min_price <= close_price <= max_price:
-            display_code = code.zfill(4) if code.isdigit() else code
+            # 数字部分を4桁でゼロパディング、英字部分があれば保持
+            numeric_part = re.match(r'(\d+)', code)
+            if numeric_part:
+                base_code = numeric_part.group(1).zfill(4)
+                # 元のコードに英字部分があれば付加
+                alpha_part = code[len(numeric_part.group(1)):]
+                display_code = base_code + alpha_part
+            else:
+                display_code = code
             filtered.append((display_code, close_price))
 
     return filtered

@@ -8,7 +8,8 @@ from typing import Dict, Any, List, Tuple, Optional
 from stock_code_scrayping import scrape_stock_codes, filter_valid_codes, select_codes_by_price
 
 app = Flask(__name__)
-CORS(app, origins=['http://localhost:3000'])  # Next.jsからのリクエストを許可
+# VercelのデプロイでもCORSが動作するように設定
+CORS(app, origins=['http://localhost:3000', 'https://*.vercel.app'], supports_credentials=True)
 
 # グローバル変数でスクレイピングの状態を管理
 scraping_status: Dict[str, Any] = {
@@ -98,11 +99,23 @@ def scrape_in_background(count: int, min_price: float, max_price: float):
         # 価格条件に基づく銘柄の選択
         results = select_codes_by_price(valid_codes, count, min_price, max_price)
         
+        # 結果を安全にJSONシリアライズできる形式に変換
+        json_results = []
+        for code, price in results:
+            try:
+                # 銘柄コードと価格を文字列として安全に処理
+                safe_code = str(code) if code else ""
+                safe_price = float(price) if price is not None else 0.0
+                json_results.append({"code": safe_code, "price": safe_price})
+            except (ValueError, TypeError) as e:
+                print(f"Warning: Failed to process result {code}, {price}: {e}")
+                continue
+        
         scraping_status.update({
             "is_running": False,
             "progress": 100,
-            "status_message": f"{len(results)} 件の銘柄を抽出完了 (有効銘柄: {len(valid_codes)} 件)",
-            "results": [{"code": code, "price": price} for code, price in results],
+            "status_message": f"{len(json_results)} 件の銘柄を抽出完了 (有効銘柄: {len(valid_codes)} 件)",
+            "results": json_results,
             "error": None
         })
         
